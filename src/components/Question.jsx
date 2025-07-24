@@ -1,68 +1,88 @@
 import React, { useState, useEffect } from "react";
 import QuestionTimer from "./QuestionTimer";
 import Answers from "./Answers";
-import QUESTIONS from "../questions";
 
-const Question = ({ index, onSelectAnswer, onSkipAnswer }) => {
+const Question = ({ index, question, onSelectAnswer, onSkipAnswer }) => {
   const [answer, setAnswer] = useState({
     selectedAnswer: "",
     isCorrect: null,
   });
 
-  // Reset answer state when question index changes
+  // Reset answer state when question changes - FIXED: Only reset when question actually changes
   useEffect(() => {
     setAnswer({
       selectedAnswer: "",
       isCorrect: null,
-    }); 
-  }, [index]);
+    });
+  }, [question?.id || index]); // Use question.id if available, fallback to index
 
-  let timer = 20000 ;
+  // Timer changes based on state to create the "drain effect"
+  let timer = 20000; // Default 20 seconds for new question
 
-  if(answer.selectedAnswer) {
-    timer = 1000;
+  if (answer.selectedAnswer && answer.isCorrect === null) {
+    timer = 1000; // 1 second - shows selection, then drains quickly
   }
 
-  if(answer.isCorrect !== null){
-    timer = 2000;
+  if (answer.isCorrect !== null) {
+    timer = 2000; // 2 seconds - shows result, then drains to next question
   }
 
   const handleSelectAnswer = (selectedAnswer) => {
+    // Prevent multiple selections
+    if (answer.selectedAnswer) {
+      return;
+    }
+
+    // Set selected answer immediately
     setAnswer({
       selectedAnswer: selectedAnswer,
       isCorrect: null,
     });
 
-    setTimeout(() => {
+    // After 1 second, show if it's correct/wrong
+    const correctnessTimer = setTimeout(() => {
       setAnswer({
         selectedAnswer: selectedAnswer,
-        isCorrect: QUESTIONS[index].answers[0] === selectedAnswer,
+        isCorrect: question?.answers?.[0] === selectedAnswer,
       });
-      
-      setTimeout(() => {
+
+      // After another 2 seconds, move to next question
+      const nextQuestionTimer = setTimeout(() => {
         onSelectAnswer(selectedAnswer);
       }, 2000);
+
+      // Store timer ID for cleanup if needed
+      return () => clearTimeout(nextQuestionTimer);
     }, 1000);
+
+    // Store timer ID for cleanup if needed
+    return () => clearTimeout(correctnessTimer);
   };
 
+  // Determine answer state for styling
   let answerState = "";
   if (answer.selectedAnswer && answer.isCorrect !== null) {
     answerState = answer.isCorrect ? "correct" : "wrong";
   } else if (answer.selectedAnswer) {
-    answerState = "answered"; // or whatever state you want for pending
+    answerState = "answered";
+  }
+
+  // Don't render if question is not available
+  if (!question) {
+    return <div>Loading question...</div>;
   }
 
   return (
     <div id="question">
       <QuestionTimer
-        key={timer} // This will force remount when index changes
+        key={index} // Force remount for each new question
         timeout={timer}
-        onTimeOut={ answer.selectedAnswer === '' ? onSkipAnswer : null}
+        onTimeOut={answer.selectedAnswer === '' ? onSkipAnswer : null}
         mode={answerState}
       />
-      <h2>{QUESTIONS[index].text}</h2>
+      <h2>{question.text}</h2>
       <Answers
-        answers={QUESTIONS[index].answers}
+        answers={question.answers}
         selectedAnswer={answer.selectedAnswer}
         answerState={answerState}
         onSelect={handleSelectAnswer}

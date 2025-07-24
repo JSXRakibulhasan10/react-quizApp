@@ -1,12 +1,11 @@
 import React from "react";
 import quizCompleteImg from "../assets/quiz-complete.png";
-import QUESTIONS from "../questions";
 
-const Summary = ({ userAnswers }) => {
+const Summary = ({ userAnswers, questions }) => {
 
     const skippedAnswers = userAnswers.filter(answer => answer === null)
 
-    const correctAnswer = userAnswers.filter((answer, index) => answer === QUESTIONS[index].answers[0]);
+    const correctAnswer = userAnswers.filter((answer, index) => answer === questions[index].answers[0]);
 
 
     const skippedAnswersShare = Math.round((skippedAnswers.length / userAnswers.length) * 100)
@@ -18,7 +17,7 @@ const Summary = ({ userAnswers }) => {
 
   return (
     <div id="summary">
-      <img src={quizCompleteImg} alt="" />
+      <img src={quizCompleteImg} alt="Trophy" />
       <h2>Quiz is Completed!</h2>
       <div id="summary-stats">
         <p>
@@ -41,7 +40,7 @@ const Summary = ({ userAnswers }) => {
           let cssClass = "user-answer";
           if (answer === null) {
             cssClass += " skipped";
-          } else if (answer === QUESTIONS[index].answers[0]) {
+          } else if (answer === questions[index].answers[0]) {
             cssClass += " correct";
           } else {
             cssClass += ' wrong'
@@ -49,7 +48,7 @@ const Summary = ({ userAnswers }) => {
           return (
             <li key={index}>
               <h3>{index + 1}</h3>
-              <p className="question">{QUESTIONS[index].text}</p>
+              <p className="question">{questions[index].text}</p>
               <p className={cssClass}>{answer ?? "Skipped"}</p>
             </li>
           );
